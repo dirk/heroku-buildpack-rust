@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # bin/compile BUILD_DIR CACHE_DIR ENV_DIR
 
+# This an amalgamation of:
+#   https://github.com/emk/heroku-buildpack-rust
+#   https://github.com/Hoverbear/heroku-buildpack-rust
+
 set -e
 set -o pipefail
 set -u
