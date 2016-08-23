@@ -51,7 +51,6 @@ testDefault()
 
     compile
     assertCapturedSuccess
-    cat ${STD_OUT}
 
     assertCaptured "-----> Downloading Rust install script for 1.8.0 from"
     assertCaptured "-----> Installing Rust binaries..."

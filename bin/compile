@@ -13,6 +13,10 @@ log() {
     echo "-----> $1"
 }
 
+indent() {
+  sed 's/^/       /'
+}
+
 # Build related variables.
 BUILD_DIR=$1
 CACHE_DIR=$2
