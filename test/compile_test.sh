@@ -41,7 +41,6 @@ cleanup()
 {
     rm -rf $BUILD_DIR
     rm -rf $CACHE_DIR
-    rm -rf /tmp/multirust-repo
 
     unset RUST_VERSION
 }
@@ -49,8 +48,10 @@ cleanup()
 testDefault()
 {
     setup
+    assertCapturedSuccess
 
     compile
+    assertCapturedSuccess
 
     assertCaptured "-----> Downloading Rust install script for 1.8.0 from"
     assertCaptured "-----> Installing Rust binaries..."
@@ -59,6 +60,7 @@ testDefault()
     assertCaptured "-----> Caching build artifacts..."
 
     compile
+    assertCapturedSuccess
 
     assertCaptured "-----> Using Rust version 1.8.0."
     assertCaptured "-----> Detected cached crates. Restoring..."
