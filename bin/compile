@@ -35,14 +35,13 @@ fi
 
 # Notify users running old, unstable versions of Rust about how to deploy
 # successfully.
-if [ -z ${CARGO_URL+x} ] || [ ! -f "$1/Cargo.toml" ]; then
-  echo <<EOF
-To deploy a modern Rust app, make sure you have a Cargo.toml file, and that
-you do not define CARGO_URL or CARGO_VERSION in RustConfig.  If you're
-using an older version of Rust, and you need to re-deploy an existing
-application, try setting your buildpack to:
+if [ -n "$CARGO_URL" ] || [ ! -f "$BUILD_DIR/Cargo.toml" ]; then
+  cat <<EOF
 
-  https://github.com/emk/heroku-buildpack-rust.git#old-rust
+  To deploy a modern Rust app, make sure you have a Cargo.toml file, and that
+  you do not define CARGO_URL or CARGO_VERSION in RustConfig.
+
+failed: Outdated configuration or missing Cargo.toml.
 EOF
   exit 1
 fi
