@@ -1,25 +1,37 @@
-#!/bin/sh
+#!/usr/bin/env bash
+# bin/compile BUILD_DIR CACHE_DIR ENV_DIR
+
+set -e
+set -o pipefail
+set -u
+
+log() {
+    echo "-----> $1"
+}
+
+# Build related variables.
+BUILD_DIR=$1
+CACHE_DIR=$2
+ENV_DIR=$3
 
 # Load our configuration variables.
 . "$1/RustConfig"
 
-# Standard paranoia.
-set -e
-set -u
+CARGO_BUILD_ARGS="${CARGO_BUILD_ARGS:---release}"
 
 # Check our configuration options.
 if [ -z ${VERSION+x} ]; then
   echo "failed: RustConfig must set VERSION to indicate the Rust version."
   exit 1
 fi
-if [ -z ${URL+x} ]; then
-  URL="https://static.rust-lang.org/rustup.sh"
+if [ -z ${RUSTUP_URL+x} ]; then
+  RUSTUP_URL="https://static.rust-lang.org/rustup.sh"
 fi
 
 # Notify users running old, unstable versions of Rust about how to deploy
 # successfully.
 if [ -z ${CARGO_URL+x} ] || [ ! -f "$1/Cargo.toml" ]; then
-    echo <<EOF
+  echo <<EOF
 To deploy a modern Rust app, make sure you have a Cargo.toml file, and that
 you do not define CARGO_URL or CARGO_VERSION in RustConfig.  If you're
 using an older version of Rust, and you need to re-deploy an existing
@@ -27,48 +39,57 @@ application, try setting your buildpack to:
 
   https://github.com/emk/heroku-buildpack-rust.git#old-rust
 EOF
+  exit 1
 fi
 
 # Switch to our cache directory.
-mkdir -p "$2"
-cd "$2"
+mkdir -p "$CACHE_DIR"
+cd "$CACHE_DIR"
 
 # Make sure we have the correct Rust binaries and set up PATH.
 if [ -d rust-cache-$VERSION ]; then
-  echo "-----> Using Rust version $VERSION"
+  log "Using Rust version $VERSION"
 else
-  echo "-----> Downloading Rust install script from $URL"
+  log "Downloading Rust install script for $VERSION from $RUSTUP_URL"
 
   rm -f rust.tar.gz
   rm -rf rust-cache-*
-  curl -o rustup.sh "$URL"
+  curl -o rustup.sh "$RUSTUP_URL"
   chmod +x rustup.sh
 
-  echo "-----> Installing Rust binaries"
+  log "Installing Rust binaries"
 
   mkdir rust-cache-$VERSION
   ./rustup.sh --prefix=rust-cache-$VERSION -y --revision=$VERSION \
       --disable-sudo --disable-ldconfig
 fi
-rust_path=`ls -1d "$2/rust-cache-$VERSION/"`
-if [ ! -x "$rust_path/bin/rustc" ]; then
-    echo "failed: Cannot find Rust binaries at $rust_path/bin"
+
+RUST_PATH=`ls -1d "$2/rust-cache-$VERSION"`
+if [ ! -x "$RUST_PATH/bin/rustc" ]; then
+    echo "failed: Cannot find Rust binaries at $RUST_PATH/bin"
     exit 1
 fi
-PATH="$rust_path/bin:$rust_path/cargo/bin:$PATH"
-LD_LIBRARY_PATH="$rust_path/lib${LD_LIBRARY_PATH+:$LD_LIBRARY_PATH}"
+
+PATH="$RUST_PATH/bin:$RUST_PATH/cargo/bin:$PATH"
+LD_LIBRARY_PATH="$RUST_PATH/lib${LD_LIBRARY_PATH+:$LD_LIBRARY_PATH}"
 export LD_LIBRARY_PATH
-echo $LD_LIBRARY_PATH
 
-# Make sure we have a fake home directory for the Cargo cache.  Ideally
-# we would keep these in our cache, but our ".git" directories don't
-# survive between builds.
-cargo_home="$(mktemp -d -t cargo_XXXX)"
+# Switch back into our main build area
+cd "$BUILD_DIR"
 
-# Build the actual application using Cargo.
-echo "-----> Building application using Cargo"
+if [[ ! -d "$CACHE_DIR/target" ]]; then
+    log "No cached crates detected."
+else
+    log "Detected cached crates. Restoring..."
+    mv "$CACHE_DIR/target" "$BUILD_DIR/target"
+fi
 
-cd "$1"
 # To debug git issues:
-#export RUST_LOG="cargo::sources::git=debug"
-HOME="$cargo_home" cargo build --verbose --release
+# export RUST_LOG="cargo::sources::git=debug"
+
+# Build the Rust app
+log "Compiling application..."
+CARGO_HOME="$CACHE_DIR/cargo" cargo build $CARGO_BUILD_ARGS
+
+log "Caching build artifacts..."
+cp -r "$BUILD_DIR/target" "$CACHE_DIR/target"
