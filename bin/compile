@@ -19,7 +19,8 @@ CACHE_DIR=$2
 ENV_DIR=$3
 
 # Load our configuration variables.
-. "$1/RustConfig"
+log "Loading configuration variables..."
+. "$BUILD_DIR/RustConfig"
 
 CARGO_BUILD_ARGS="${CARGO_BUILD_ARGS:---release}"
 
