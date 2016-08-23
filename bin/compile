@@ -50,8 +50,10 @@ fi
 mkdir -p "$CACHE_DIR"
 cd "$CACHE_DIR"
 
+RUST_CACHE_NAME="rust-cache-$VERSION"
+
 # Make sure we have the correct Rust binaries and set up PATH.
-if [ -d rust-cache-$VERSION ]; then
+if [ -d $RUST_CACHE_NAME ]; then
   log "Using Rust version $VERSION."
 else
   log "Downloading Rust install script for $VERSION from $RUSTUP_URL..."
@@ -64,11 +66,11 @@ else
   log "Installing Rust binaries..."
 
   mkdir rust-cache-$VERSION
-  ./rustup.sh --prefix=rust-cache-$VERSION -y --revision=$VERSION \
+  ./rustup.sh --prefix=$RUST_CACHE_NAME -y --revision=$VERSION \
       --disable-sudo --disable-ldconfig
 fi
 
-RUST_PATH=`ls -1d "$2/rust-cache-$VERSION"`
+RUST_PATH=`ls -1d "$CACHE_DIR/$RUST_CACHE_NAME"`
 if [ ! -x "$RUST_PATH/bin/rustc" ]; then
     echo "failed: Cannot find Rust binaries at $RUST_PATH/bin."
     exit 1
