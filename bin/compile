@@ -35,7 +35,7 @@ fi
 
 # Notify users running old, unstable versions of Rust about how to deploy
 # successfully.
-if [ -n "$CARGO_URL" ] || [ ! -f "$BUILD_DIR/Cargo.toml" ]; then
+if [ -n "${CARGO_URL-}" ] || [ ! -f "$BUILD_DIR/Cargo.toml" ]; then
   cat <<EOF
 
   To deploy a modern Rust app, make sure you have a Cargo.toml file, and that
